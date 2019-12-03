@@ -66,6 +66,9 @@
                         <Export-Service>
                             org.osgi.service.cm.ConfigurationAdmin
                         </Export-Service>
+                        <Provide-Capability>
+                            osgi.implementation;osgi.implementation="osgi.cm";uses:="org.osgi.service.cm,org.apache.karaf.services.staticcm";version:Version="1.6"
+                        </Provide-Capability>
                     </instructions>
                 </configuration>
             </plugin>
