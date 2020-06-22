@@ -17,9 +17,16 @@
 package org.apache.karaf.spring.boot.internal;
 
 import org.apache.karaf.spring.boot.SpringBootService;
+import org.apache.karaf.util.StreamUtils;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.net.URI;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 public class SpringBootServiceImpl implements SpringBootService {
 
@@ -31,8 +38,18 @@ public class SpringBootServiceImpl implements SpringBootService {
     }
 
     @Override
-    public void start(URI uri) throws Exception {
-
+    public void install(URI uri) throws Exception {
+        // copy jar
+        File springJar = new File(storage, "test.jar");
+        StreamUtils.copy(uri.toURL().openStream(), new FileOutputStream(springJar));
+        // simple run for now
+        // creating classloader
+        JarFile jar = new JarFile(springJar);
+        Manifest manifest = jar.getManifest();
+        Attributes attributes = manifest.getAttributes("Spring-Boot-Version");
+        if (attributes.getValue("Spring-Boot-Version") == null) {
+            throw new IllegalArgumentException("Invalid Spring Boot artifact");
+        }
     }
 
 }

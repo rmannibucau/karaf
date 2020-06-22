@@ -14,12 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.karaf.spring.boot;
+package org.apache.karaf.spring.boot.internal;
 
-import java.net.URI;
+import org.junit.Test;
 
-public interface SpringBootService {
+import java.io.File;
 
-    void install(URI uri) throws Exception;
+public class SpringBootServiceImplTest {
+
+    @Test
+    public void testInvalidArtifact() throws Exception {
+        System.setProperty("karaf.data", "target/spring-boot");
+        SpringBootServiceImpl service = new SpringBootServiceImpl();
+        service.install(new File("/Users/jbonofre/.m2/repository/commons-lang/commons-lang/2.6/commons-lang-2.6.jar").toURI());
+    }
 
 }
