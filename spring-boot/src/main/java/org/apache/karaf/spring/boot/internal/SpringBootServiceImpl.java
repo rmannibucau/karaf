@@ -42,7 +42,7 @@ public class SpringBootServiceImpl implements SpringBootService {
         // copy jar
         File springJar = new File(storage, "test.jar");
         StreamUtils.copy(uri.toURL().openStream(), new FileOutputStream(springJar));
-        // simple run for now
+        // simple run for now, see next TODO for next step
         // creating classloader
         JarFile jar = new JarFile(springJar);
         Manifest manifest = jar.getManifest();
@@ -50,6 +50,9 @@ public class SpringBootServiceImpl implements SpringBootService {
         if (attributes.getValue("Spring-Boot-Version") == null) {
             throw new IllegalArgumentException("Invalid Spring Boot artifact");
         }
+
+        // TODO inspect depends and Spring beans to use existing bundles/features/services
+        // running main
     }
 
 }
