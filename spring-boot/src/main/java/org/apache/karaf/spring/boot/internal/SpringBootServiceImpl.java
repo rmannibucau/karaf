@@ -50,7 +50,6 @@ public class SpringBootServiceImpl implements SpringBootService {
         if (attributes.getValue("Spring-Boot-Version") == null) {
             throw new IllegalArgumentException("Invalid Spring Boot artifact");
         }
-
         // TODO inspect depends and Spring beans to use existing bundles/features/services
         // running main
     }
