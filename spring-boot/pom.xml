@@ -59,7 +59,7 @@
                             *
                         </Import-Package>
                         <Private-Package>
-                            org.apache.karaf.spring.boot.internal
+                            org.apache.karaf.spring.boot
                         </Private-Package>
                     </instructions>
                 </configuration>

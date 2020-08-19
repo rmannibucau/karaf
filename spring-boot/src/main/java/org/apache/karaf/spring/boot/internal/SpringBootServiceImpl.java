@@ -39,6 +39,8 @@ public class SpringBootServiceImpl implements SpringBootService {
 
     @Override
     public void install(URI uri) throws Exception {
+
+
         // copy jar
         File springJar = new File(storage, "test.jar");
         StreamUtils.copy(uri.toURL().openStream(), new FileOutputStream(springJar));
