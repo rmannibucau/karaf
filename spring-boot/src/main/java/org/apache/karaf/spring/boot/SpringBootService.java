@@ -22,4 +22,8 @@ public interface SpringBootService {
 
     void install(URI uri) throws Exception;
 
+    void start(String name, String[] args) throws Exception;
+
+    String[] list() throws Exception;
+
 }

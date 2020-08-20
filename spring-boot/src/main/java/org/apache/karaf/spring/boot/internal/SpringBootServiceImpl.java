@@ -18,12 +18,15 @@ package org.apache.karaf.spring.boot.internal;
 
 import org.apache.karaf.spring.boot.SpringBootService;
 import org.apache.karaf.util.StreamUtils;
+import org.osgi.framework.FrameworkUtil;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Paths;
+import java.util.concurrent.ExecutorService;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -39,21 +42,44 @@ public class SpringBootServiceImpl implements SpringBootService {
 
     @Override
     public void install(URI uri) throws Exception {
-
-
         // copy jar
-        File springJar = new File(storage, "test.jar");
-        StreamUtils.copy(uri.toURL().openStream(), new FileOutputStream(springJar));
-        // simple run for now, see next TODO for next step
-        // creating classloader
-        JarFile jar = new JarFile(springJar);
+        String fileName = Paths.get(uri).getFileName().toString();
+
+        File springBootJar = new File(storage, fileName);
+
+        StreamUtils.copy(uri.toURL().openStream(), new FileOutputStream(springBootJar));
+        JarFile jar = new JarFile(springBootJar);
         Manifest manifest = jar.getManifest();
-        Attributes attributes = manifest.getAttributes("Spring-Boot-Version");
+        Attributes attributes = manifest.getMainAttributes();
         if (attributes.getValue("Spring-Boot-Version") == null) {
+            springBootJar.delete();
             throw new IllegalArgumentException("Invalid Spring Boot artifact");
         }
-        // TODO inspect depends and Spring beans to use existing bundles/features/services
-        // running main
+    }
+
+    @Override
+    public void start(String name, String[] args) throws Exception {
+
+        File springBootJar = new File(storage, name);
+        if (!springBootJar.exists()) {
+            throw new IllegalArgumentException(name + " is not installed");
+        }
+        URLClassLoader classLoader = new URLClassLoader(name + "-CLASSLOADER", new URL[]{springBootJar.toURI().toURL()}, this.getClass().getClassLoader().getParent());
+        JarFile jar = new JarFile(springBootJar);
+        Manifest manifest = jar.getManifest();
+        Attributes attributes = manifest.getMainAttributes();
+        String mainClass;
+        if (attributes.getValue("Main-Class") != null) {
+            mainClass = attributes.getValue("Main-Class");
+        } else {
+            mainClass = "org.springframework.boot.loader.JarLauncher";
+        }
+        classLoader.loadClass(mainClass).getMethod("main", String[].class).invoke(null, new Object[]{args});
+    }
+
+    @Override
+    public String[] list() throws Exception {
+        return storage.list();
     }
 
 }

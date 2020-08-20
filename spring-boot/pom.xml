@@ -59,9 +59,43 @@
                             *
                         </Import-Package>
                         <Private-Package>
-                            org.apache.karaf.spring.boot
+                            org.apache.karaf.spring.boot,
+                            org.springframework.boot*
                         </Private-Package>
                     </instructions>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.1.2</version>
+                <executions>
+                    <execution>
+                        <id>copy-test</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <artifactItems>
+                        <artifactItem>
+                            <groupId>commons-lang</groupId>
+                            <artifactId>commons-lang</artifactId>
+                            <version>2.6</version>
+                            <type>jar</type>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                        </artifactItem>
+                    </artifactItems>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>9</source>
+                    <target>9</target>
                 </configuration>
             </plugin>
         </plugins>

@@ -16,17 +16,49 @@
  */
 package org.apache.karaf.spring.boot.internal;
 
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
+import javax.swing.*;
 import java.io.File;
+import java.net.URI;
+import java.nio.file.Paths;
 
 public class SpringBootServiceImplTest {
 
+    @Before
+    public void cleanup() {
+        System.setProperty("karaf.data", "target");
+        File file = new File("target/spring-boot");
+        file.delete();
+    }
+
     @Test
-    public void testInvalidArtifact() throws Exception {
-        System.setProperty("karaf.data", "target/spring-boot");
+    public void testInstallInvalidArtifact() throws Exception {
         SpringBootServiceImpl service = new SpringBootServiceImpl();
-        service.install(new File("/Users/jbonofre/.m2/repository/commons-lang/commons-lang/2.6/commons-lang-2.6.jar").toURI());
+        try {
+            service.install(new File("target/commons-lang-2.6.jar").toURI());
+        } catch (IllegalArgumentException e) {
+            // good
+            return;
+        }
+        Assert.fail("IllegalArgumentException expected");
+    }
+
+    @Test
+    public void testInstallValidArtifact() throws Exception {
+        SpringBootServiceImpl service = new SpringBootServiceImpl();
+        service.install(new File("target/test-classes/rest-service-0.0.1-SNAPSHOT.jar").toURI());
+        Assert.assertEquals(1, service.list().length);
+        Assert.assertEquals("rest-service-0.0.1-SNAPSHOT.jar", service.list()[0]);
+    }
+
+    @Test
+    public void testStart() throws Exception {
+        SpringBootServiceImpl service = new SpringBootServiceImpl();
+        service.install(new File("target/test-classes/rest-service-0.0.1-SNAPSHOT.jar").toURI());
+        service.start("rest-service-0.0.1-SNAPSHOT.jar", new String[]{});
     }
 
 }
