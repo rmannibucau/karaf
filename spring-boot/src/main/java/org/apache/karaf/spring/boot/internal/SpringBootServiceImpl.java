@@ -22,6 +22,8 @@ import org.osgi.framework.FrameworkUtil;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -29,7 +31,9 @@ import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
+import java.util.zip.ZipEntry;
 
 public class SpringBootServiceImpl implements SpringBootService {
 
@@ -55,11 +59,44 @@ public class SpringBootServiceImpl implements SpringBootService {
             springBootJar.delete();
             throw new IllegalArgumentException("Invalid Spring Boot artifact");
         }
+
+        // explode jar
+        File explodedLocation = new File(storage, fileName + "-exploded");
+        explodedLocation.mkdirs();
+        try {
+            try (InputStream inputStream = springBootJar.toURI().toURL().openStream()) {
+                try (JarInputStream jarInputStream = new JarInputStream(inputStream)) {
+                    ZipEntry zipEntry = jarInputStream.getNextEntry();
+                    while (zipEntry != null) {
+                        String path = zipEntry.getName();
+                        if (!path.contains("..")) {
+                            File destFile = new File(explodedLocation, path);
+                            if (zipEntry.isDirectory()) {
+                                destFile.mkdirs();
+                            } else {
+                                destFile.getParentFile().mkdirs();
+                                try (FileOutputStream fileOutputStream = new FileOutputStream(destFile)) {
+                                    byte[] buffer = new byte[8192];
+                                    int n;
+                                    while (-1 != (n = jarInputStream.read(buffer))) {
+                                        fileOutputStream.write(buffer, 0, n);
+                                    }
+                                }
+                            }
+                        }
+                        zipEntry = jarInputStream.getNextEntry();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            springBootJar.delete();
+            explodedLocation.delete();
+            throw e;
+        }
     }
 
     @Override
     public void start(String name, String[] args) throws Exception {
-
         File springBootJar = new File(storage, name);
         if (!springBootJar.exists()) {
             throw new IllegalArgumentException(name + " is not installed");
@@ -79,7 +116,12 @@ public class SpringBootServiceImpl implements SpringBootService {
 
     @Override
     public String[] list() throws Exception {
-        return storage.list();
+        return storage.list(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return (!name.contains("exploded"));
+            }
+        });
     }
 
 }
