@@ -8,6 +8,10 @@ public final class ApplicationContextCapturer {
     }
 
     public static void set(final Object instance) {
-        KarafLauncherLoader.class.cast(Thread.currentThread().getContextClassLoader().getParent()).setContextHolder(instance);
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        while (!KarafLauncherLoader.class.isInstance(loader)) {
+            loader = loader.getParent();
+        }
+        KarafLauncherLoader.class.cast(loader).setContextHolder(instance);
     }
 }

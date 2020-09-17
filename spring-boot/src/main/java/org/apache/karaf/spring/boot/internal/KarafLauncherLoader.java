@@ -22,20 +22,8 @@ public class KarafLauncherLoader extends URLClassLoader {
     private final File base;
     private Object contextHolder;
 
-    public KarafLauncherLoader(final File baseOrJar, final ClassLoader osgiParent) throws MalformedURLException {
-        super(new URL[]{baseOrJar.toURI().toURL()}, new ClassLoader(osgiParent) {
-            @Override
-            protected Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
-                if (name != null && name.startsWith("org.springframework.")) {
-                    throw new ClassNotFoundException(name);
-                }
-                try {
-                    return super.loadClass(name, resolve);
-                } catch (final ClassNotFoundException cnfe) {
-                    return getSystemClassLoader().loadClass(name);
-                }
-            }
-        });
+    public KarafLauncherLoader(final File baseOrJar, final ClassLoader parent) throws MalformedURLException {
+        super(new URL[]{baseOrJar.toURI().toURL()}, parent);
         this.integrations = new ClassGenerator();
         this.base = baseOrJar;
     }

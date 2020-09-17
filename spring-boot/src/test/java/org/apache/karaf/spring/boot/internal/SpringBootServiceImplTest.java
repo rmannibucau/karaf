@@ -43,7 +43,7 @@ public class SpringBootServiceImplTest {
     public void testInstallInvalidArtifact() throws Exception {
         SpringBootServiceImpl service = new SpringBootServiceImpl();
         try {
-            service.install(new File("target/commons-lang-2.6.jar").toURI());
+            service.install(new File("target/commons-lang-2.6.jar").toURI(), "");
         } catch (IllegalArgumentException e) {
             // good
             return;
@@ -54,7 +54,7 @@ public class SpringBootServiceImplTest {
     @Test
     public void testInstallValidArtifact() throws Exception {
         SpringBootServiceImpl service = new SpringBootServiceImpl();
-        service.install(new File("target/test-classes/rest-service-0.0.1-SNAPSHOT.jar").toURI());
+        service.install(new File("target/test-classes/rest-service-0.0.1-SNAPSHOT.jar").toURI(), "");
 
         Assert.assertEquals(1, service.list().length);
         Assert.assertEquals("rest-service-0.0.1-SNAPSHOT.jar", service.list()[0]);
@@ -63,7 +63,7 @@ public class SpringBootServiceImplTest {
     @Test
     public void testStart() throws Exception {
         SpringBootServiceImpl service = new SpringBootServiceImpl();
-        service.install(new File("target/test-classes/rest-service-0.0.1-SNAPSHOT.jar").toURI());
+        service.install(new File("target/test-classes/rest-service-0.0.1-SNAPSHOT.jar").toURI(), "");
         service.start("rest-service-0.0.1-SNAPSHOT.jar", new String[0]);
         service.stop("rest-service-0.0.1-SNAPSHOT.jar"); // cleanup the classloader (avoids to leak)
     }

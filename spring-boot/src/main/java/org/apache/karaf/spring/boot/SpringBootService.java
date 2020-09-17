@@ -20,7 +20,7 @@ import java.net.URI;
 
 public interface SpringBootService {
 
-    void install(URI uri) throws Exception;
+    void install(URI uri, String stack) throws Exception;
 
     void start(String name, String[] args) throws Exception;
 

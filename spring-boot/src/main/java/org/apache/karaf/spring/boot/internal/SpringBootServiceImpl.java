@@ -24,10 +24,16 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.jar.Attributes;
@@ -40,19 +46,26 @@ public class SpringBootServiceImpl implements SpringBootService {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(SpringBootServiceImpl.class);
 
+    private File metadata;
     private File storage;
+    private File stacksBase;
     private final ConcurrentMap<String, KarafLauncherLoader> loaders = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, URLClassLoader> stacks = new ConcurrentHashMap<>();
 
     public SpringBootServiceImpl() {
-        storage = new File(new File(System.getProperty("karaf.data")), "spring-boot");
+        metadata = new File(new File(System.getProperty("karaf.data")), "spring-boot/metadata");
+        storage = new File(new File(System.getProperty("karaf.data")), "spring-boot/applications");
+        stacksBase = new File(new File(System.getProperty("karaf.data")), "spring-boot/stacks");
+        metadata.mkdirs();
         storage.mkdirs();
+        stacksBase.mkdirs();
 
         // todo: configadmin?
         System.setProperty("org.springframework.boot.logging.LoggingSystem", "org.apache.karaf.spring.boot.embed.pax.logging.PaxLoggingSystem");
     }
 
     @Override
-    public void install(final URI uri) throws Exception {
+    public void install(final URI uri, final String stack) throws Exception {
         LOGGER.info("Installing Spring Boot application located {}", uri);
         final Path source = Paths.get(uri);
         String fileName = source.getFileName().toString();
@@ -64,17 +77,29 @@ public class SpringBootServiceImpl implements SpringBootService {
             throw new IllegalArgumentException(source + " does not exist");
         }
         // todo: digest?
+        // todo: handle exploded dirs
         StreamUtils.copy(uri.toURL().openStream(), new FileOutputStream(springBootJar));
         getAttributes(springBootJar); // validates it is a spring boot app
-        // todo: read ars from the install url and dump them in a properties next to the jar?
+        final Properties meta = new Properties();
+        try (final Writer writer = Files.newBufferedWriter(metadata.toPath().resolve(fileName + ".properties"))) {
+            meta.setProperty("stack", stack == null || stack.trim().isEmpty() ? "<none>" : stack);
+        }
     }
 
     @Override
     public void start(final String name, final String[] args) throws Exception {
         LOGGER.info("Starting Spring Boot application {} with args {}", name, args);
-        File springBootJar = new File(storage, name);
+        final File springBootJar = new File(storage, name);
         if (!springBootJar.exists()) {
             throw new IllegalArgumentException(name + " is not installed");
+        }
+        final Path meta = metadata.toPath().resolve(springBootJar.getName() + ".properties");
+        if (!Files.exists(meta)) {
+            throw new IllegalArgumentException("No metadata for " + springBootJar);
+        }
+        final Properties config = new Properties();
+        try (final Reader reader = Files.newBufferedReader(meta)) {
+            config.load(reader);
         }
 
         final Attributes attributes = getAttributes(springBootJar);
@@ -83,7 +108,11 @@ public class SpringBootServiceImpl implements SpringBootService {
         if (main == null) {
             throw new IllegalArgumentException("No main in " + springBootJar);
         }
-        final KarafLauncherLoader loader = new KarafLauncherLoader(springBootJar, getClass().getClassLoader());
+        final ClassLoader bundleLoader = getClass().getClassLoader();
+        final String stack = config.getProperty("stack", "");
+        final KarafLauncherLoader loader = new KarafLauncherLoader(
+                springBootJar,
+                "<none>".equals(stack) || stack.isEmpty() ? createLauncherRootParent(bundleLoader) : createLauncherRootParent(getStackLoader(stack, bundleLoader)));
         final Thread thread = Thread.currentThread();
         final ClassLoader old = thread.getContextClassLoader();
         thread.setContextClassLoader(loader);
@@ -112,11 +141,59 @@ public class SpringBootServiceImpl implements SpringBootService {
     public void stopAll() {
         loaders.keySet().forEach(this::stop);
         loaders.clear();
+        stacks.values().forEach(it -> {
+            try {
+                it.close();
+            } catch (final IOException e) {
+                // no-op
+            }
+        });
+        stacks.clear();
     }
 
     @Override
     public String[] list() {
         return storage.list();
+    }
+
+    private URLClassLoader getStackLoader(final String stack, final ClassLoader bundleLoader) {
+        return stacks.computeIfAbsent(stack, stackName -> {
+            try {
+                return new URLClassLoader(
+                        Files.list(stacksBase.toPath().resolve(stackName))
+                                .filter(it -> {
+                                    final String jarName = it.getFileName().toString();
+                                    return jarName.endsWith(".jar") || jarName.endsWith(".zip");
+                                })
+                                .map(it -> {
+                                    try {
+                                        return it.toUri().toURL();
+                                    } catch (final MalformedURLException e) {
+                                        throw new IllegalArgumentException(e);
+                                    }
+                                })
+                                .toArray(URL[]::new),
+                        bundleLoader);
+            } catch (final IOException e) {
+                throw new IllegalStateException(e);
+            }
+        });
+    }
+
+    private ClassLoader createLauncherRootParent(final ClassLoader parent) {
+        return new ClassLoader(parent) {
+            @Override
+            protected Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
+                if (name != null && name.startsWith("org.springframework.")) {
+                    throw new ClassNotFoundException(name);
+                }
+                try {
+                    return super.loadClass(name, resolve);
+                } catch (final ClassNotFoundException cnfe) {
+                    return getSystemClassLoader().loadClass(name);
+                }
+            }
+        };
     }
 
     private Attributes getAttributes(File source) throws IOException {
