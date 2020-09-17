@@ -43,6 +43,14 @@
             <artifactId>org.apache.karaf.util</artifactId>
             <scope>provided</scope>
         </dependency>
+
+        <!-- test -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.29</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

@@ -19,6 +19,7 @@ package org.apache.karaf.spring.boot.internal;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.impl.SimpleLogger;
 
 import javax.swing.*;
 import java.io.File;
@@ -29,6 +30,7 @@ public class SpringBootServiceImplTest {
 
     @Before
     public void cleanup() {
+        System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "DEBUG");
         System.setProperty("karaf.data", "target");
         File file = new File("target/spring-boot");
         file.delete();
@@ -50,8 +52,12 @@ public class SpringBootServiceImplTest {
     public void testInstallValidArtifact() throws Exception {
         SpringBootServiceImpl service = new SpringBootServiceImpl();
         service.install(new File("target/test-classes/rest-service-0.0.1-SNAPSHOT.jar").toURI());
+
         Assert.assertEquals(1, service.list().length);
         Assert.assertEquals("rest-service-0.0.1-SNAPSHOT.jar", service.list()[0]);
+
+        Assert.assertTrue(new File("target/spring-boot/rest-service-0.0.1-SNAPSHOT.jar-exploded").exists());
+        Assert.assertTrue(new File("target/spring-boot/rest-service-0.0.1-SNAPSHOT.jar-exploded").isDirectory());
     }
 
     @Test

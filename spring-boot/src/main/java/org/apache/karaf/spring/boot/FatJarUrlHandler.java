@@ -37,7 +37,7 @@ public class FatJarUrlHandler extends AbstractURLStreamHandlerService implements
         private InputStream inputStream;
 
         public FatJarConnection(URL url) throws MalformedURLException {
-            super(new URL(url.toString().substring("spring-boot-fatjar:".length())));
+            super(new URL(url.toString().substring("spring-boot:".length())));
         }
 
         @Override
