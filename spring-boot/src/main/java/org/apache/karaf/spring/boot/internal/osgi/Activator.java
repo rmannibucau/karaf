@@ -30,18 +30,25 @@ import java.util.Hashtable;
     provides = @ProvideService(URLStreamHandlerService.class)
 )
 public class Activator extends BaseActivator {
+
+    private SpringBootServiceImpl springBootService;
+
     @Override
     protected void doStart() throws Exception {
         final FatJarUrlHandler fatJarUrlHandler = new FatJarUrlHandler();
         final Hashtable<String, Object> serviceProperties = new Hashtable<>();
         serviceProperties.put("url.handler.protocol", "spring-boot-fatjar");
         register(URLStreamHandlerService.class, fatJarUrlHandler, serviceProperties);
-        register(SpringBootService.class, new SpringBootServiceImpl());
+        springBootService = new SpringBootServiceImpl();
+        register(SpringBootService.class, springBootService);
     }
 
     @Override
     protected void doStop() {
-        super.doStop();
-        // todo: springbootservice.stopAll()
+        try {
+            springBootService.stopAll();
+        } finally {
+            super.doStop();
+        }
     }
 }

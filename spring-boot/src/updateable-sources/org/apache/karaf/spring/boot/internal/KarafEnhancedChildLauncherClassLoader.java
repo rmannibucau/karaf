@@ -50,7 +50,8 @@ public class KarafEnhancedChildLauncherClassLoader extends LaunchedURLClassLoade
         if ("META-INF/spring.factories".equals(name)) {
             return enumeration(Stream.concat(
                     list(super.getResources(name)).stream(),
-                    Stream.of(new URL("karaf-spring-boot", null, -1, name, new StaticURLStreamHandler("org.springframework.boot.SpringApplicationRunListener=org.apache.karaf.spring.boot.internal.SpringApplicationContextCapture"))))
+                    Stream.of(new URL("karaf-spring-boot", null, -1, name, new StaticURLStreamHandler(
+                            "org.springframework.boot.SpringApplicationRunListener=org.apache.karaf.spring.boot.internal.SpringApplicationContextCapture"))))
                     .collect(toList()));
         }
         return super.getResources(name);
