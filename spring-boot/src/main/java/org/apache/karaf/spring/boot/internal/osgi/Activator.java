@@ -17,6 +17,8 @@
 package org.apache.karaf.spring.boot.internal.osgi;
 
 import org.apache.karaf.spring.boot.FatJarUrlHandler;
+import org.apache.karaf.spring.boot.SpringBootService;
+import org.apache.karaf.spring.boot.internal.SpringBootServiceImpl;
 import org.apache.karaf.util.tracker.BaseActivator;
 import org.apache.karaf.util.tracker.annotation.ProvideService;
 import org.apache.karaf.util.tracker.annotation.Services;
@@ -28,14 +30,18 @@ import java.util.Hashtable;
     provides = @ProvideService(URLStreamHandlerService.class)
 )
 public class Activator extends BaseActivator {
-
     @Override
     protected void doStart() throws Exception {
-        FatJarUrlHandler fatJarUrlHandler = new FatJarUrlHandler();
-
-        Hashtable<String, Object> serviceProperties = new Hashtable<>();
+        final FatJarUrlHandler fatJarUrlHandler = new FatJarUrlHandler();
+        final Hashtable<String, Object> serviceProperties = new Hashtable<>();
         serviceProperties.put("url.handler.protocol", "spring-boot-fatjar");
         register(URLStreamHandlerService.class, fatJarUrlHandler, serviceProperties);
+        register(SpringBootService.class, new SpringBootServiceImpl());
     }
 
+    @Override
+    protected void doStop() {
+        super.doStop();
+        // todo: springbootservice.stopAll()
+    }
 }

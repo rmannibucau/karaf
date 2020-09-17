@@ -24,6 +24,10 @@ public interface SpringBootService {
 
     void start(String name, String[] args) throws Exception;
 
+    void stop(String name);
+
+    void stopAll();
+
     String[] list() throws Exception;
 
 }

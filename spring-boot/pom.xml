@@ -33,6 +33,10 @@
     <packaging>bundle</packaging>
     <name>Apache Karaf :: Spring Boot :: Core</name>
 
+    <properties>
+        <spring-boot.version>2.3.3.RELEASE</spring-boot.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.osgi</groupId>
@@ -42,6 +46,21 @@
             <groupId>org.apache.karaf</groupId>
             <artifactId>org.apache.karaf.util</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.karaf.shell</groupId>
+            <artifactId>org.apache.karaf.shell.core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency> <!-- todo: align on karaf std -->
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>9.0-beta</version>
+        </dependency>
+        <dependency> <!-- todo: align on karaf std -->
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-commons</artifactId>
+            <version>9.0-beta</version>
         </dependency>
 
         <!-- test -->
@@ -53,20 +72,50 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>debug-work</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-web</artifactId>
+                    <version>${spring-boot.version}</version>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-loader</artifactId>
+                    <version>${spring-boot.version}</version>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.ow2.asm</groupId>
+                    <artifactId>asm-util</artifactId>
+                    <version>9.0-beta</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.karaf.tooling</groupId>
+                <artifactId>karaf-services-maven-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
                 <configuration>
                     <instructions>
                         <Export-Package>
-                            org.apache.karaf.spring.boot
+                            org.apache.karaf.spring.boot.*
                         </Export-Package>
                         <Import-Package>
                             *
                         </Import-Package>
                         <Private-Package>
+                            org.apache.karaf.util.*,
                             org.apache.karaf.spring.boot,
                             org.springframework.boot*
                         </Private-Package>

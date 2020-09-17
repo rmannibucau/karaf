@@ -25,6 +25,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 
+// todo: main: instead of spring-boot?
 public class FatJarUrlHandler extends AbstractURLStreamHandlerService implements URLStreamHandlerService {
 
     @Override
@@ -32,12 +33,11 @@ public class FatJarUrlHandler extends AbstractURLStreamHandlerService implements
         return new FatJarConnection(url);
     }
 
-    class FatJarConnection extends URLConnection {
-
+    private static class FatJarConnection extends URLConnection {
         private InputStream inputStream;
 
         public FatJarConnection(URL url) throws MalformedURLException {
-            super(new URL(url.toString().substring("spring-boot:".length())));
+            super(new URL(url.toExternalForm().substring("spring-boot:".length())));
         }
 
         @Override

@@ -18,7 +18,9 @@ package org.apache.karaf.spring.boot.internal;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.slf4j.impl.SimpleLogger;
 
 import javax.swing.*;
@@ -27,13 +29,14 @@ import java.net.URI;
 import java.nio.file.Paths;
 
 public class SpringBootServiceImplTest {
+    @Rule
+    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
-    public void cleanup() {
+    public void setup() {
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "DEBUG");
-        System.setProperty("karaf.data", "target");
-        File file = new File("target/spring-boot");
-        file.delete();
+        System.setProperty("karaf.data", temporaryFolder.getRoot().getAbsolutePath());
+        new File(temporaryFolder.getRoot(), "spring-boot").mkdirs();
     }
 
     @Test
@@ -55,16 +58,14 @@ public class SpringBootServiceImplTest {
 
         Assert.assertEquals(1, service.list().length);
         Assert.assertEquals("rest-service-0.0.1-SNAPSHOT.jar", service.list()[0]);
-
-        Assert.assertTrue(new File("target/spring-boot/rest-service-0.0.1-SNAPSHOT.jar-exploded").exists());
-        Assert.assertTrue(new File("target/spring-boot/rest-service-0.0.1-SNAPSHOT.jar-exploded").isDirectory());
     }
 
     @Test
     public void testStart() throws Exception {
         SpringBootServiceImpl service = new SpringBootServiceImpl();
         service.install(new File("target/test-classes/rest-service-0.0.1-SNAPSHOT.jar").toURI());
-        service.start("rest-service-0.0.1-SNAPSHOT.jar", new String[]{});
+        service.start("rest-service-0.0.1-SNAPSHOT.jar", new String[0]);
+        service.stop("rest-service-0.0.1-SNAPSHOT.jar"); // cleanup the classloader (avoids to leak)
     }
 
 }
